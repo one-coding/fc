@@ -1,44 +1,72 @@
 // @ts-check
 
-const { Client } = require('pg')
-const { program } = require('commander')
-const prompts = require('prompts')
+const { Sequelize, DataTypes } = require('sequelize')
 
-async function connect() {
-  const client = new Client({
-    user: 'myuser',
-    password: 'mypass',
+async function main() {
+  const sequelize = new Sequelize({
     database: 'fc21',
+    username: 'kimjaelin',
+    password: 'mypass',
+    dialect: 'postgres',
+    host: 'localhost',
   })
-  console.log(client)
 
-  await client.connect()
+  const User = sequelize.define(
+    'user',
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      age: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+    },
+    {
+      timestamps: false,
+    }
+  )
 
-  return client
+  const City = sequelize.define(
+    'city',
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+    },
+    {
+      timestamps: false,
+    }
+  )
+
+  User.belongsTo(City)
+
+  await sequelize.sync({ force: true })
+
+  const newCity = await City.build({
+    name: 'Seoul',
+  }).save()
+
+  await User.build({
+    name: 'Coco',
+    age: 20,
+    cityId: newCity.getDataValue('id'),
+  }).save()
+
+  await sequelize.authenticate()
+  await sequelize.close()
 }
 
-program.command('add').action(async () => {
-  try {
-    const client = await connect()
-    console.log(client)
-    const userName = await prompts({
-      type: 'text',
-      name: 'userName',
-      message: 'Provide a user name to insert',
-    })
-
-    const query = `INSERT INTO users (name) VALUES ('${userName.userName}')`
-    await client.query(query)
-
-    await client.end()
-  } catch (err) {
-    console.error(err)
-  }
-})
-
-program.command('remove').action(async () => {
-  const client = await connect()
-  await client.end()
-})
-
-program.parseAsync()
+main()

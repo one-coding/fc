@@ -1,11 +1,12 @@
 {
-  "name": "image-resizer",
+  "name": "postgres",
   "private": true,
   "engines": {
     "node": "14.17.6"
   },
   "scripts": {
-    "start": "nodemon src/main.js"
+    "start": "nodemon src/main.js",
+    "seq": "sequelize-cli"
   },
   "version": "1.0.0",
   "dependencies": {
@@ -14,7 +15,9 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "pg": "^8.7.1",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "sequelize": "^6.7.0",
+    "sequelize-cli": "^6.2.0"
   },
   "devDependencies": {
     "eslint": "^8.0.1",
