@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "kimjaelin",
+    "password": null,
+    "database": "fc21",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
