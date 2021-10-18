@@ -1,10 +1,14 @@
 // @ts-check
 
-const express = require('express')
 const userRouter = require('./routers/user')
-const axios = require('axios')
 const session = require('express-session')
+const axios = require('axios')
+const express = require('express')
+
 const app = express()
+
+const URL = 'http://localhost:3085/v1'
+
 app.use(express.json())
 app.use('/public', express.static('src/public'))
 app.use('/uploads', express.static('uploads'))
@@ -25,26 +29,39 @@ app.use(
 )
 
 app.use('/users', userRouter)
-app.use('/', async (req, res) => {
+
+const apiRequest = async (req) => {
   try {
-    console.log('hi')
     if (!req.session.jwt) {
-      //@ts-ignore
-      const tokenResult = await axios.post('http://localhost:3085/v1/token', {
+      // 세션에 토큰이 없으면
+      const tokenResult = await axios.post(`${URL}/token`, {
         clientSecret: '1f34d111-000f-4fe6-a874-2f59b7c1695e',
       })
-      console.log(tokenResult.data)
-      if (tokenResult.data && tokenResult.data.code === 200) {
-        //@ts-ignore
-        req.session.jwt = tokenResult
-      } else {
-        return res.json(tokenResult.data)
-      }
+      req.session.jwt = tokenResult.data.token // 세션에 토큰 저장
     }
+    return await axios.post(
+      `${URL}/customer`,
+      {
+        name: 'jwt',
+        phone: '01194240151',
+      },
+      {
+        headers: { authorization: req.session.jwt },
+      }
+    ) // API 요청
+  } catch (error) {
+    if (error.response.status === 419) {
+      // 토큰 만료시 토큰 재발급 받기
+      delete req.session.jwt
+      return apiRequest(req)
+    } // 419 외의 다른 에러면
+    return error.response
+  }
+}
 
-    // res.render('index', {
-    //   message: 'Hello, Pug!!',
-    // })
+app.use('/', async (req, res, next) => {
+  try {
+    await apiRequest(req)
   } catch (err) {
     console.error(err)
   }
